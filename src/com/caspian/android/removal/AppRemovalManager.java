@@ -77,6 +77,9 @@ public class AppRemovalManager
      */
     public void backupFile(String fileName) throws Exception
     {
+        // make sure backup dir exists
+        createBackupDir();
+        
         // get the runtime object
         Runtime r = Runtime.getRuntime();
 
