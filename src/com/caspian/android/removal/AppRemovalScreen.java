@@ -17,111 +17,29 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 
-public class AppRemovalScreen extends Activity
+public class AppRemovalScreen extends AppManagementScreen
 {
-    private ListView fileList;
-    
-    private AppRemovalManager mgr;
-    private LinearLayout panel;
+    /**
+     * Directory to back up to
+     */
+    private String backupDir;
 
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
+        appManagementDir = "/system/app/";
+        backupDir = "/sdcard/sdx/backup/app/";
         super.onCreate(savedInstanceState);
 
-        mgr = new AppRemovalManager();
-        
-        // layout the page
-        layoutPage();
-        
-        // create the list of files
-        createFileList();
+        btnCopyFiles.setText("Backup Selected Files");
     }
-    
-    private void layoutPage()
-    {
-        // Create a panel and set it as the content view
-        panel = new LinearLayout(this);
-        panel.setOrientation(LinearLayout.VERTICAL);
-        setContentView(panel);
-
-        // create a couple buttons
-        LinearLayout buttonPanel = new LinearLayout(this);
-        buttonPanel.setOrientation(LinearLayout.HORIZONTAL);
-        panel.addView(buttonPanel);
-
-        Button btnDeleteFiles = new Button(this);
-        btnDeleteFiles.setText("Delete Selected Files");
-        buttonPanel.addView(btnDeleteFiles);
-
-        Button btnBackupFiles = new Button(this);
-        btnBackupFiles.setText("Backup Selected Files");
-        buttonPanel.addView(btnBackupFiles);
-
-        fileList = new ListView(this);
-        fileList.setFastScrollEnabled(true);
-        fileList.setItemsCanFocus(false);
-        fileList.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
-
-        fileList.setAdapter(new ArrayAdapter<String>(this,
-            android.R.layout.simple_list_item_multiple_choice));
-        panel.addView(fileList);
-        
-
-        // create callback for the buttons
-        btnBackupFiles.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v)
-            {
-                backupCheckedFiles();
-            }
-        });
-
-        btnDeleteFiles.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v)
-            {
-                deleteCheckedFilesPrompt();
-            }
-        });
-    }
-
-    private void createFileList()
-    {
-        File f = new File("/system/app/");
-        String[] files = f.list();
-        Arrays.sort(files);
-
-        ArrayAdapter<String> a = (ArrayAdapter<String>)fileList.getAdapter();
-        a.clear();
-        
-        for (String fileName : files)
-        {
-            a.add(fileName);
-        }
-        
-        //a.notifyDataSetChanged();
-        
-        fileList.clearChoices();
-        fileList.invalidate();
-//        fileList.setAdapter(a);
-//
-//        panel.removeView(fileList);
-//        panel.addView(fileList);
-//        
-//        fileList.requestLayout();
-//        panel.requestLayout();
-        
-    }
-
 
     /**
-     * Backup the checked files
+     * Copy any checked file back to the system dir to restore it
      */
-    private boolean backupCheckedFiles()
+    @Override
+    protected boolean copyCheckedFiles()
     {
         boolean success = false;
         ArrayList<String> files = getCheckedFiles();
@@ -135,7 +53,7 @@ public class AppRemovalScreen extends Activity
                 for (String f : files)
                 {
                     fileName = f;
-                    mgr.backupFile(fileName);
+                    mgr.copyFile(appManagementDir + fileName, backupDir, false);
                 }
 
                 success = true;
@@ -147,7 +65,7 @@ public class AppRemovalScreen extends Activity
 
                 AlertDialog dialog = new AlertDialog.Builder(this).create();
                 dialog.setMessage(message);
-                dialog.setButton("Yes", new DialogInterface.OnClickListener() {
+                dialog.setButton("Ok", new DialogInterface.OnClickListener() {
 
                     @Override
                     public void onClick(DialogInterface dialog, int which)
@@ -168,11 +86,10 @@ public class AppRemovalScreen extends Activity
     }
 
     /**
-     * First check to see if the files
-     * 
-     * @return
+     * Delete any files from /system/app
      */
-    private boolean deleteCheckedFilesPrompt()
+    @Override
+    protected boolean deleteCheckedFiles()
     {
         boolean success = false;
         ArrayList<String> files = getCheckedFiles();
@@ -194,34 +111,17 @@ public class AppRemovalScreen extends Activity
         }
         else
         {
-            success = deleteCheckedFiles();
+            success = performDelete();
         }
         return success;
     }
 
     /**
-     * Get a list of strings that contain the file names of the selected items
+     * Present the user with the option to back up any files that haven't
+     * been backed up before deleting them
      * 
-     * @return
+     * @param filesNotBackedUp
      */
-    private ArrayList<String> getCheckedFiles()
-    {
-        SparseBooleanArray items = fileList.getCheckedItemPositions();
-        ArrayList<String> files = new ArrayList<String>();
-
-        for (int i = 0; i < items.size(); i++)
-        {
-            if (items.valueAt(i))
-            {
-                files
-                    .add(fileList.getItemAtPosition(items.keyAt(i)).toString());
-            }
-        }
-
-        return files;
-    }
-
-
     private void backupOrSkip(String filesNotBackedUp)
     {
         String message = "The following files have not been backed up. Would "
@@ -242,7 +142,7 @@ public class AppRemovalScreen extends Activity
                 @Override
                 public void onClick(DialogInterface dialog, int which)
                 {
-                    if (backupCheckedFiles()) deleteCheckedFiles();
+                    if (copyCheckedFiles()) performDelete();
                 }
             });
         dialog.setButton2("Cancel", new DialogInterface.OnClickListener() {
@@ -258,16 +158,23 @@ public class AppRemovalScreen extends Activity
     /**
      * Delete the checked files
      */
-    private boolean deleteCheckedFiles()
+    private boolean performDelete()
     {
         boolean success = false;
         ArrayList<String> files = getCheckedFiles();
 
-        try
+        try 
         {
-            mgr.deleteFiles(files);
-
-            createFileList();
+            // make system writeable
+            mgr.remountSystemDir(true);
+            
+            for (String f : files)
+            {
+                if (!mgr.backupExists(f))
+                {
+                    mgr.deleteFile(appManagementDir + f, true);
+                }
+            }
             
             success = true;
         }
@@ -289,6 +196,21 @@ public class AppRemovalScreen extends Activity
             dialog.show();
             
             createFileList();
+        }
+        finally
+        {
+            // recreate the file list
+            createFileList();
+
+            // make system read only
+            try
+            {
+                mgr.remountSystemDir(false);
+            }
+            catch (Exception e)
+            {
+                // this is bad!
+            }
         }
 
         return success;

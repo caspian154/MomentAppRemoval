@@ -36,23 +36,14 @@ public class AppRemovalMenu extends PreferenceActivity
         // The main preference screen
         mainScreen = getPreferenceManager().createPreferenceScreen(this);
 
-        Preference systemFiles = new Preference(this);
-        systemFiles.setTitle("Manage /system/apps/");
-        mainScreen.addPreference(systemFiles);
+        Preference deleteSystem = new Preference(this);
+        deleteSystem.setTitle("Manage system apps");
+        mainScreen.addPreference(deleteSystem);
         
-        // show the delete
-        systemFiles.setOnPreferenceClickListener(
-            new Preference.OnPreferenceClickListener() 
-            {
-                
-                @Override
-                public boolean onPreferenceClick(Preference preference)
-                {
-                    startNewAcitvity();
-                    
-                    return false;
-                }
-            });
+        // add a restore menu item
+        Preference restoreSystem = new Preference(this);
+        restoreSystem.setTitle("Manage Backup");
+        mainScreen.addPreference(restoreSystem);
 
         // create a sub-screen for managing settings
         PreferenceScreen settingsScreen = 
@@ -75,14 +66,39 @@ public class AppRemovalMenu extends PreferenceActivity
         autoPref.setSummary(
             "Backup/delete .odex files associated with .apk");
         settingsScreen.addPreference(autoPref);
-        
+
+        // show the delete screen
+        deleteSystem.setOnPreferenceClickListener(
+            new Preference.OnPreferenceClickListener() 
+            {
+                @Override
+                public boolean onPreferenceClick(Preference preference)
+                {
+                    Intent i = new Intent(
+                        AppRemovalMenu.this, AppRemovalScreen.class);
+                    startActivity(i);
+                    return false;
+                }
+            });
+
+        // show the delete screen
+        restoreSystem.setOnPreferenceClickListener(
+            new Preference.OnPreferenceClickListener() 
+            {
+                @Override
+                public boolean onPreferenceClick(Preference preference)
+                {
+                    Intent i = new Intent(
+                        AppRemovalMenu.this, AppRestoreScreen.class);
+                    startActivity(i);
+                    return false;
+                }
+            });
         return mainScreen;
 
     }
     
     private void startNewAcitvity()
     {
-        Intent i = new Intent(this, AppRemovalScreen.class);
-        startActivity(i);
     }
 }
