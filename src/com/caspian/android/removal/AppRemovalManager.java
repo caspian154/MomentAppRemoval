@@ -11,8 +11,46 @@ import android.widget.Toast;
 
 public class AppRemovalManager
 {
-    private String backupDir = "/sdcard/sdx/backup/app";
-    private String appDir = "/system/app/";
+    /**
+     * Get whether /system is mounted rw
+     * @return
+     */
+    public static boolean isSystemRw()
+    {
+        boolean isRw = false;
+        String cmd[] = new String[3];
+        cmd[0] = "sh";
+        cmd[1] = "-c";
+        cmd[2]= "mount | busybox grep stl5";
+
+        try
+        {
+            // get the runtime object
+            Runtime r = Runtime.getRuntime();
+            Process p = r.exec(cmd);     
+            
+            if (p.waitFor() == 0)
+            {
+                String output = getProcessOutput(p);
+                
+                // A typical mount shouldn't contain rw unless the system
+                // dir is mounted rw - I hope this is a valid assumption
+                isRw = output.contains("rw"); 
+            }
+            else
+            {
+                String output = getProcessError(p);
+                System.err.println(output);
+            }
+        }
+        catch (Exception e)
+        {
+            // eat the exception
+            e.printStackTrace();
+        }
+        
+        return isRw;
+    }
     
     /**
      * Remount /system 
@@ -21,7 +59,8 @@ public class AppRemovalManager
      * @throws IOException
      * @throws InterruptedException
      */
-    public void remountSystemDir(boolean writeable) throws IOException, InterruptedException
+    public static void remountSystemDir(boolean writeable) 
+    throws IOException, InterruptedException
     {
         remountDir("/system", "/dev/stl5", writeable);
     }
@@ -35,7 +74,7 @@ public class AppRemovalManager
      * @throws IOException
      * @throws InterruptedException
      */
-    public void remountDir(
+    public static void remountDir(
         String dirName, 
         String deviceName,
         boolean writeable) throws IOException, InterruptedException

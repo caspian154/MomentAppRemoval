@@ -1,21 +1,10 @@
 package com.caspian.android.removal;
 
-import java.io.File;
-import java.io.IOException;
-import java.security.KeyStore.LoadStoreParameter;
 import java.util.ArrayList;
-import java.util.Arrays;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
-import android.util.SparseBooleanArray;
-import android.view.View;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.LinearLayout;
-import android.widget.ListView;
 
 public class AppRemovalScreen extends AppManagementScreen
 {
@@ -65,13 +54,10 @@ public class AppRemovalScreen extends AppManagementScreen
 
                 AlertDialog dialog = new AlertDialog.Builder(this).create();
                 dialog.setMessage(message);
-                dialog.setButton("Ok", new DialogInterface.OnClickListener() {
-
-                    @Override
-                    public void onClick(DialogInterface dialog, int which)
-                    {
-                    }
-                });
+                dialog.setButton(
+                    AlertDialog.BUTTON_POSITIVE,
+                    "Ok", 
+                    (DialogInterface.OnClickListener)null);
                 
                 exc.printStackTrace();
 
@@ -130,14 +116,19 @@ public class AppRemovalScreen extends AppManagementScreen
 
         AlertDialog dialog = new AlertDialog.Builder(this).create();
         dialog.setMessage(message);
-        dialog.setButton("Continue", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which)
-            {
-                deleteCheckedFiles();
-            }
-        });
-        dialog.setButton3("Backup First",
+        dialog.setButton(
+            AlertDialog.BUTTON_POSITIVE,
+            "Continue", 
+            new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which)
+                {
+                    deleteCheckedFiles();
+                }
+            });
+        dialog.setButton(
+            AlertDialog.BUTTON_NEUTRAL,
+            "Backup First",
             new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which)
@@ -145,12 +136,10 @@ public class AppRemovalScreen extends AppManagementScreen
                     if (copyCheckedFiles()) performDelete();
                 }
             });
-        dialog.setButton2("Cancel", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which)
-            {
-            }
-        });
+        dialog.setButton(
+            AlertDialog.BUTTON_NEGATIVE,
+            "Cancel", 
+            (DialogInterface.OnClickListener)null);
 
         dialog.show();
     }
@@ -166,7 +155,7 @@ public class AppRemovalScreen extends AppManagementScreen
         try 
         {
             // make system writeable
-            mgr.remountSystemDir(true);
+            if (autoMount) AppRemovalManager.remountSystemDir(true);
             
             for (String f : files)
             {
@@ -182,16 +171,13 @@ public class AppRemovalScreen extends AppManagementScreen
         {
             String message = "We're sorry, there was an Exception "
                 + "thrown while deleting:\n\n" + exc.getMessage();
-                
 
             AlertDialog dialog = new AlertDialog.Builder(this).create();
             dialog.setMessage(message);
-            dialog.setButton("Ok", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which)
-                {
-                }
-            });
+            dialog.setButton(
+                AlertDialog.BUTTON_POSITIVE,
+                "Ok", 
+                (DialogInterface.OnClickListener)null);
             
             dialog.show();
             
@@ -205,7 +191,7 @@ public class AppRemovalScreen extends AppManagementScreen
             // make system read only
             try
             {
-                mgr.remountSystemDir(false);
+                if (autoMount) AppRemovalManager.remountSystemDir(false);
             }
             catch (Exception e)
             {

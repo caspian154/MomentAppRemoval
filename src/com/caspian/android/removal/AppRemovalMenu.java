@@ -1,9 +1,11 @@
 package com.caspian.android.removal;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.CheckBoxPreference;
-import android.preference.EditTextPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceScreen;
@@ -11,18 +13,23 @@ import android.preference.PreferenceScreen;
 public class AppRemovalMenu extends PreferenceActivity
 {   
     /**
-     * The main preference screen used to show all the options
+     * Key to store advanced options in the preferences
      */
-    private PreferenceScreen mainScreen;
+    public static final String PREF_KEY_AUTOMOUNT = "AUTO_MOUNT_SYSTEM";
 
+    /**
+     * The name of the shared prefs file
+     */
+    public static final String PREFS_NAME = "MomentAppRemoval";
+    
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
-
+        
         // set up the preference layout
-        setPreferenceScreen(createPreferenceScreen());
+        createPreferenceScreen();
     }
 
     /**
@@ -31,10 +38,13 @@ public class AppRemovalMenu extends PreferenceActivity
      * 
      * @return The preference screen to use as this activity's main window
      */
-    private PreferenceScreen createPreferenceScreen()
+    private void createPreferenceScreen()
     {
+        final SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
+        
         // The main preference screen
-        mainScreen = getPreferenceManager().createPreferenceScreen(this);
+        PreferenceScreen mainScreen =
+            getPreferenceManager().createPreferenceScreen(this);
 
         Preference deleteSystem = new Preference(this);
         deleteSystem.setTitle("Manage system apps");
@@ -42,30 +52,57 @@ public class AppRemovalMenu extends PreferenceActivity
         
         // add a restore menu item
         Preference restoreSystem = new Preference(this);
-        restoreSystem.setTitle("Manage Backup");
+        restoreSystem.setTitle("Manage Backups");
         mainScreen.addPreference(restoreSystem);
+        
+        // Show the 
+        boolean autoManageMount = settings.getBoolean(PREF_KEY_AUTOMOUNT, true);
+        if (!autoManageMount)
+        {
+            CheckBoxPreference systemMount = new CheckBoxPreference(this);
+            systemMount.setTitle("Mount /system rw");
+            systemMount.setChecked(AppRemovalManager.isSystemRw());
+            mainScreen.addPreference(systemMount);
+
+            systemMount.setOnPreferenceChangeListener(
+                new Preference.OnPreferenceChangeListener() 
+                {
+                    @Override
+                    public boolean onPreferenceChange(
+                        Preference preference, 
+                        Object newValue)
+                    {
+                        boolean checked = ((Boolean)newValue).booleanValue();
+                        return remountSystem(checked);
+                    }
+                });
+        }
 
         // create a sub-screen for managing settings
         PreferenceScreen settingsScreen = 
             getPreferenceManager().createPreferenceScreen(this);
         settingsScreen.setTitle("Settings");
-        //mainScreen.addPreference(settingsScreen);
+        mainScreen.addPreference(settingsScreen);
 
         CheckBoxPreference advancedPref = new CheckBoxPreference(this);
-        advancedPref.setTitle("Advanced Mode");
+        advancedPref.setTitle("Auto Mount System");
+        advancedPref.setChecked(autoManageMount);
         advancedPref.setSummary(
-            "Enabling opens up a few advanced features.");
+            "Let the app remount /system when necessary");
         settingsScreen.addPreference(advancedPref);
         
-        EditTextPreference filterPref = new EditTextPreference(this);
-        filterPref.setTitle("Filename filter");
-        settingsScreen.addPreference(filterPref);
-
-        CheckBoxPreference autoPref = new CheckBoxPreference(this);
-        autoPref.setTitle("Auto Handle .odex");
-        autoPref.setSummary(
-            "Backup/delete .odex files associated with .apk");
-        settingsScreen.addPreference(autoPref);
+//      TODO: implement the filter and associate .odex and .apk
+        
+        
+//        EditTextPreference filterPref = new EditTextPreference(this);
+//        filterPref.setTitle("Filename filter");
+//        settingsScreen.addPreference(filterPref);
+//
+//        CheckBoxPreference autoPref = new CheckBoxPreference(this);
+//        autoPref.setTitle("Auto Handle .odex");
+//        autoPref.setSummary(
+//            "Backup/delete .odex files associated with .apk");
+//        settingsScreen.addPreference(autoPref);
 
         // show the delete screen
         deleteSystem.setOnPreferenceClickListener(
@@ -94,11 +131,60 @@ public class AppRemovalMenu extends PreferenceActivity
                     return false;
                 }
             });
-        return mainScreen;
-
+        
+        advancedPref.setOnPreferenceChangeListener(
+            new Preference.OnPreferenceChangeListener() 
+            {
+                @Override
+                public boolean onPreferenceChange(Preference preference, Object newValue)
+                {
+                    boolean checked = ((Boolean)newValue).booleanValue();
+                    SharedPreferences.Editor editor = settings.edit();
+                    editor.putBoolean(
+                        PREF_KEY_AUTOMOUNT, 
+                        checked);
+                    editor.commit();
+                    
+                    createPreferenceScreen();
+                    
+                    return true;
+                }
+            });
+        
+        setPreferenceScreen(mainScreen);
     }
     
-    private void startNewAcitvity()
+    /**
+     * Remount the system writeable or readonly
+     * 
+     * @param writeable mount the system with rw permission
+     * @return Whether the operation was successful
+     */
+    private boolean remountSystem(boolean writeable)
     {
+        boolean operationSucceeded = false;
+        
+        try
+        {
+            AppRemovalManager.remountSystemDir(writeable);
+            
+            operationSucceeded = true;
+        }
+        catch (Exception exc)
+        {
+            String message = "Error while remounting /system:\n\n" + 
+                exc.getMessage();
+
+            AlertDialog dialog = new AlertDialog.Builder(this).create();
+            dialog.setMessage(message);
+            dialog.setButton(
+                AlertDialog.BUTTON_POSITIVE, 
+                "OK", 
+                (DialogInterface.OnClickListener)null);
+            
+            dialog.show();
+        }
+
+        return operationSucceeded;
     }
 }
