@@ -68,6 +68,10 @@ public class AppRemovalManager
     /**
      * Remount the specified dir 
      * 
+     * su -c "mount -t rfs -o remount,rw /dev/stl5 /system"
+     * or
+     * su -c "mount -t rfs -o remount,ro /dev/stl5 /system"
+     * 
      * @param dirName
      * @param deviceName
      * @param writeable mount ro (false) or rw (true)

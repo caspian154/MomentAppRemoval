@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
+import android.widget.Toast;
 
 public class AppRemovalScreen extends AppManagementScreen
 {
@@ -30,6 +31,28 @@ public class AppRemovalScreen extends AppManagementScreen
     @Override
     protected boolean copyCheckedFiles()
     {
+        boolean backupDone = backupCheckedFiles(true);
+        
+        if (backupDone)
+        {
+            Toast toast = Toast.makeText(
+                    getApplicationContext(), 
+                    "Successfully backed up files", 
+                    Toast.LENGTH_SHORT);
+            toast.show();
+        }
+        
+        return backupDone;
+    }
+    
+    /**
+     * Move the checked files and overwrite if specified 
+     * 
+     * @param overWrite
+     * @return
+     */
+    protected boolean backupCheckedFiles(boolean overWrite)
+    {
         boolean success = false;
         ArrayList<String> files = getCheckedFiles();
 
@@ -41,8 +64,15 @@ public class AppRemovalScreen extends AppManagementScreen
             {
                 for (String f : files)
                 {
-                    fileName = f;
-                    mgr.copyFile(appManagementDir + fileName, backupDir, false);
+                    fileName = appManagementDir + f;
+
+                    // only backup files that don't exist in the backupdir
+                    // if overwrite is true
+                    if (!overWrite 
+                        || !mgr.backupExists(fileName))
+                    {
+                        mgr.copyFile(fileName, backupDir, false);
+                    }
                 }
 
                 success = true;
@@ -84,7 +114,7 @@ public class AppRemovalScreen extends AppManagementScreen
         // first check to see if the user wants to back up the files first
         for (String f : files)
         {
-            if (!mgr.backupExists(f))
+            if (!mgr.backupExists(appManagementDir + f))
             {
                 filesNotBackedUp += f + "\n";
             }
@@ -111,8 +141,8 @@ public class AppRemovalScreen extends AppManagementScreen
     private void backupOrSkip(String filesNotBackedUp)
     {
         String message = "The following files have not been backed up. Would "
-            + "you like to Continue without backup, Continue after backup, or "
-            + "cancel this operation?\n\n" + filesNotBackedUp;
+            + "you like to continue without backup, backup first then continue "
+            + ", or cancel this operation?\n\n" + filesNotBackedUp;
 
         AlertDialog dialog = new AlertDialog.Builder(this).create();
         dialog.setMessage(message);
