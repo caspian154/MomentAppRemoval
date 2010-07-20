@@ -69,7 +69,7 @@ public class AppRemovalScreen extends AppManagementScreen
                     // only backup files that don't exist in the backupdir
                     // if overwrite is true
                     if (!overWrite 
-                        || !mgr.backupExists(fileName))
+                        || !mgr.backupExists(backupDir + f))
                     {
                         mgr.copyFile(fileName, backupDir, false);
                     }
@@ -114,7 +114,7 @@ public class AppRemovalScreen extends AppManagementScreen
         // first check to see if the user wants to back up the files first
         for (String f : files)
         {
-            if (!mgr.backupExists(appManagementDir + f))
+            if (!mgr.backupExists(backupDir + f))
             {
                 filesNotBackedUp += f + "\n";
             }
@@ -185,7 +185,7 @@ public class AppRemovalScreen extends AppManagementScreen
         try 
         {
             // make system writeable
-            if (autoMount) AppRemovalManager.remountSystemDir(true);
+            if (AppSettings.getAutoMount()) AppRemovalManager.remountSystemDir(true);
             
             for (String f : files)
             {
@@ -221,7 +221,7 @@ public class AppRemovalScreen extends AppManagementScreen
             // make system read only
             try
             {
-                if (autoMount) AppRemovalManager.remountSystemDir(false);
+                if (AppSettings.getAutoMount()) AppRemovalManager.remountSystemDir(false);
             }
             catch (Exception e)
             {

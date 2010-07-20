@@ -6,27 +6,23 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.CheckBoxPreference;
+import android.preference.EditTextPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceScreen;
 
 public class AppRemovalMenu extends PreferenceActivity
 {   
-    /**
-     * Key to store advanced options in the preferences
-     */
-    public static final String PREF_KEY_AUTOMOUNT = "AUTO_MOUNT_SYSTEM";
-
-    /**
-     * The name of the shared prefs file
-     */
-    public static final String PREFS_NAME = "MomentAppRemoval";
     
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+        
+        // Create the AppSettings object
+        AppSettings.CreateSettings(
+            getSharedPreferences(AppSettings.PREFS_NAME, 0));
         
         // set up the preference layout
         createPreferenceScreen();
@@ -40,8 +36,6 @@ public class AppRemovalMenu extends PreferenceActivity
      */
     private void createPreferenceScreen()
     {
-        final SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
-        
         // The main preference screen
         PreferenceScreen mainScreen =
             getPreferenceManager().createPreferenceScreen(this);
@@ -55,8 +49,8 @@ public class AppRemovalMenu extends PreferenceActivity
         restoreSystem.setTitle("Manage Backups");
         mainScreen.addPreference(restoreSystem);
         
-        // Show the 
-        boolean autoManageMount = settings.getBoolean(PREF_KEY_AUTOMOUNT, true);
+        // show the mount preference if automount is false
+        boolean autoManageMount = AppSettings.getAutoMount();
         if (!autoManageMount)
         {
             CheckBoxPreference systemMount = new CheckBoxPreference(this);
@@ -90,18 +84,17 @@ public class AppRemovalMenu extends PreferenceActivity
         advancedPref.setSummary(
             "Let the app remount /system when necessary");
         settingsScreen.addPreference(advancedPref);
-        
-//      TODO: implement the filter and associate .odex and .apk
-        
-        
+
 //        EditTextPreference filterPref = new EditTextPreference(this);
 //        filterPref.setTitle("Filename filter");
+//        filterPref.setText(AppSettings.getFilter());
 //        settingsScreen.addPreference(filterPref);
 //
 //        CheckBoxPreference autoPref = new CheckBoxPreference(this);
 //        autoPref.setTitle("Auto Handle .odex");
 //        autoPref.setSummary(
 //            "Backup/delete .odex files associated with .apk");
+//        autoPref.setChecked(AppSettings.getAssociateOdex());
 //        settingsScreen.addPreference(autoPref);
 
         // show the delete screen
@@ -131,25 +124,47 @@ public class AppRemovalMenu extends PreferenceActivity
                     return false;
                 }
             });
-        
+
         advancedPref.setOnPreferenceChangeListener(
             new Preference.OnPreferenceChangeListener() 
             {
                 @Override
                 public boolean onPreferenceChange(Preference preference, Object newValue)
                 {
-                    boolean checked = ((Boolean)newValue).booleanValue();
-                    SharedPreferences.Editor editor = settings.edit();
-                    editor.putBoolean(
-                        PREF_KEY_AUTOMOUNT, 
-                        checked);
-                    editor.commit();
-                    
+                    AppSettings.setAutoMount(
+                        ((Boolean)newValue).booleanValue());
                     createPreferenceScreen();
                     
                     return true;
                 }
             });
+
+//        filterPref.setOnPreferenceChangeListener(
+//            new Preference.OnPreferenceChangeListener() 
+//            {
+//                @Override
+//                public boolean onPreferenceChange(Preference preference, Object newValue)
+//                {
+//                    AppSettings.setFilter(newValue.toString());
+//                    
+//                    return true;
+//                }
+//            });
+//
+//        filterPref.setOnPreferenceChangeListener(
+//            new Preference.OnPreferenceChangeListener() 
+//            {
+//                @Override
+//                public boolean onPreferenceChange(Preference preference, Object newValue)
+//                {
+//                    AppSettings.setAssociateOdex(
+//                        ((Boolean)newValue).booleanValue());
+//
+//                    createPreferenceScreen();
+//                    
+//                    return true;
+//                }
+//            });
         
         setPreferenceScreen(mainScreen);
     }
