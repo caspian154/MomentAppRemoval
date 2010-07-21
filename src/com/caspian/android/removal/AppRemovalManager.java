@@ -86,9 +86,9 @@ public class AppRemovalManager
         String cmd[] = new String[3];
         cmd[0] = "su";
         cmd[1] = "-c";
-        cmd[2]= "mount -t rfs -o remount,";
+        cmd[2]= "mount -o remount,";
         cmd[2] += (writeable ? "rw" : "ro");
-        cmd[2] += " " + deviceName + " " + dirName;
+        cmd[2] += " " + dirName;
 
         // get the runtime object
         Runtime r = Runtime.getRuntime();
@@ -122,6 +122,7 @@ public class AppRemovalManager
      */
     public void copyFile(
         String fileName, 
+        String source,
         String destination,
         boolean requiresRoot) throws Exception 
     {
@@ -136,19 +137,27 @@ public class AppRemovalManager
         Runtime r = Runtime.getRuntime();
 
         Process p;
+        String cmdString = "cat " + source + fileName + " > " + 
+            destination + fileName;
+        
         if (requiresRoot)
         {
             String cmd[] = new String[3];
             cmd[0] = "su";
             cmd[1] = "-c";
-            cmd[2]= "busybox cp " + fileName + " " + destination;
+            cmd[2]= cmdString;
             
             p = r.exec(cmd);
         }
         else
-        {
-            String cmdString = "busybox cp " + fileName + " " + destination;
-            p = r.exec(cmdString);
+        {   
+            String cmd[] = new String[3];
+            cmd[0] = "sh";
+            cmd[1] = "-c";
+            cmd[2]= cmdString;
+            p = r.exec(cmd);
+            //cmd[2]= cmdString;
+            //p = r.exec(cmdString);
         }
 
         if (p.waitFor() != 0)

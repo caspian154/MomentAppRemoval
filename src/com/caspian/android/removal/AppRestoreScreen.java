@@ -44,7 +44,7 @@ public class AppRestoreScreen extends AppManagementScreen
                 for (String f : files)
                 {
                     fileName = f;
-                    mgr.copyFile(appManagementDir + f, restoreDir, true);
+                    mgr.copyFile(f, appManagementDir, restoreDir, true);
 
                     // handle the odex as well
                     if (handleOdex && f.endsWith(".apk"))
@@ -53,7 +53,7 @@ public class AppRestoreScreen extends AppManagementScreen
 
                         if (mgr.fileExists(appManagementDir + odexName))
                         {
-                            mgr.copyFile(appManagementDir + odexName, restoreDir, true);
+                            mgr.copyFile(odexName, appManagementDir, restoreDir, true);
                         }
                     }
                 }

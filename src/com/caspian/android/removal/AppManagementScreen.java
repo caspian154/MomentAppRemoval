@@ -16,6 +16,7 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public abstract class AppManagementScreen extends Activity
 {
@@ -87,7 +88,14 @@ public abstract class AppManagementScreen extends Activity
             @Override
             public void onClick(View v)
             {
-                copyCheckedFiles();
+                if (copyCheckedFiles())
+                {
+                    Toast toast = Toast.makeText(
+                            getApplicationContext(), 
+                            "Successfully restored files", 
+                            Toast.LENGTH_SHORT);
+                    toast.show();
+                }
             }
         });
 

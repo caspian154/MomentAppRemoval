@@ -72,14 +72,14 @@ public class AppRemovalScreen extends AppManagementScreen
                     if (!overWrite 
                         || !mgr.fileExists(backupDir + f))
                     {
-                        mgr.copyFile(fileName, backupDir, false);
+                        mgr.copyFile(f, appManagementDir, backupDir, false);
                         
                         if (handleOdex && fileName.endsWith(".apk"))
                         {
-                            String odexName = fileName.replace(".apk", ".odex");
-                            if (mgr.fileExists(odexName))
+                            String odexName = f.replace(".apk", ".odex");
+                            if (mgr.fileExists(appManagementDir + odexName))
                             {
-                                mgr.copyFile(odexName, backupDir, false);
+                                mgr.copyFile(odexName, appManagementDir, backupDir, false);
                             }
                         }
                     }
