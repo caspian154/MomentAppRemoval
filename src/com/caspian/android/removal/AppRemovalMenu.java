@@ -78,24 +78,25 @@ public class AppRemovalMenu extends PreferenceActivity
         settingsScreen.setTitle("Settings");
         mainScreen.addPreference(settingsScreen);
 
-        CheckBoxPreference advancedPref = new CheckBoxPreference(this);
-        advancedPref.setTitle("Auto Mount System");
-        advancedPref.setChecked(autoManageMount);
-        advancedPref.setSummary(
+        CheckBoxPreference autoMountPref = new CheckBoxPreference(this);
+        autoMountPref.setTitle("Auto Mount System");
+        autoMountPref.setChecked(autoManageMount);
+        autoMountPref.setSummary(
             "Let the app remount /system when necessary");
-        settingsScreen.addPreference(advancedPref);
+        settingsScreen.addPreference(autoMountPref);
 
-//        EditTextPreference filterPref = new EditTextPreference(this);
-//        filterPref.setTitle("Filename filter");
-//        filterPref.setText(AppSettings.getFilter());
-//        settingsScreen.addPreference(filterPref);
-//
-//        CheckBoxPreference autoPref = new CheckBoxPreference(this);
-//        autoPref.setTitle("Auto Handle .odex");
-//        autoPref.setSummary(
-//            "Backup/delete .odex files associated with .apk");
-//        autoPref.setChecked(AppSettings.getAssociateOdex());
-//        settingsScreen.addPreference(autoPref);
+        EditTextPreference filterPref = new EditTextPreference(this);
+        filterPref.setDialogTitle("Filename filter for the management pages.");
+        filterPref.setTitle("Filename filter");
+        filterPref.setText(AppSettings.getFilter());
+        settingsScreen.addPreference(filterPref);
+
+        CheckBoxPreference odexPref = new CheckBoxPreference(this);
+        odexPref.setTitle("Auto Handle .odex");
+        odexPref.setSummary(
+            "Backup/delete .odex files associated with .apk");
+        odexPref.setChecked(AppSettings.getAssociateOdex());
+        settingsScreen.addPreference(odexPref);
 
         // show the delete screen
         deleteSystem.setOnPreferenceClickListener(
@@ -125,7 +126,7 @@ public class AppRemovalMenu extends PreferenceActivity
                 }
             });
 
-        advancedPref.setOnPreferenceChangeListener(
+        autoMountPref.setOnPreferenceChangeListener(
             new Preference.OnPreferenceChangeListener() 
             {
                 @Override
@@ -139,32 +140,32 @@ public class AppRemovalMenu extends PreferenceActivity
                 }
             });
 
-//        filterPref.setOnPreferenceChangeListener(
-//            new Preference.OnPreferenceChangeListener() 
-//            {
-//                @Override
-//                public boolean onPreferenceChange(Preference preference, Object newValue)
-//                {
-//                    AppSettings.setFilter(newValue.toString());
-//                    
-//                    return true;
-//                }
-//            });
-//
-//        filterPref.setOnPreferenceChangeListener(
-//            new Preference.OnPreferenceChangeListener() 
-//            {
-//                @Override
-//                public boolean onPreferenceChange(Preference preference, Object newValue)
-//                {
-//                    AppSettings.setAssociateOdex(
-//                        ((Boolean)newValue).booleanValue());
-//
-//                    createPreferenceScreen();
-//                    
-//                    return true;
-//                }
-//            });
+        filterPref.setOnPreferenceChangeListener(
+            new Preference.OnPreferenceChangeListener() 
+            {
+                @Override
+                public boolean onPreferenceChange(Preference preference, Object newValue)
+                {
+                    AppSettings.setFilter(newValue.toString());
+                    
+                    return true;
+                }
+            });
+
+        odexPref.setOnPreferenceChangeListener(
+            new Preference.OnPreferenceChangeListener() 
+            {
+                @Override
+                public boolean onPreferenceChange(Preference preference, Object newValue)
+                {
+                    AppSettings.setAssociateOdex(
+                        ((Boolean)newValue).booleanValue());
+
+                    createPreferenceScreen();
+                    
+                    return true;
+                }
+            });
         
         setPreferenceScreen(mainScreen);
     }

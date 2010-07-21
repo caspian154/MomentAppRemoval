@@ -54,6 +54,7 @@ public class AppRemovalScreen extends AppManagementScreen
     protected boolean backupCheckedFiles(boolean overWrite)
     {
         boolean success = false;
+        boolean handleOdex = AppSettings.getAssociateOdex();
         ArrayList<String> files = getCheckedFiles();
 
         if (files.size() > 0)
@@ -69,9 +70,18 @@ public class AppRemovalScreen extends AppManagementScreen
                     // only backup files that don't exist in the backupdir
                     // if overwrite is true
                     if (!overWrite 
-                        || !mgr.backupExists(backupDir + f))
+                        || !mgr.fileExists(backupDir + f))
                     {
                         mgr.copyFile(fileName, backupDir, false);
+                        
+                        if (handleOdex && fileName.endsWith(".apk"))
+                        {
+                            String odexName = fileName.replace(".apk", ".odex");
+                            if (mgr.fileExists(odexName))
+                            {
+                                mgr.copyFile(odexName, backupDir, false);
+                            }
+                        }
                     }
                 }
 
@@ -108,15 +118,28 @@ public class AppRemovalScreen extends AppManagementScreen
     protected boolean deleteCheckedFiles()
     {
         boolean success = false;
+        boolean handleOdex = AppSettings.getAssociateOdex();
         ArrayList<String> files = getCheckedFiles();
         String filesNotBackedUp = "";
 
         // first check to see if the user wants to back up the files first
         for (String f : files)
         {
-            if (!mgr.backupExists(backupDir + f))
+            if (!mgr.fileExists(backupDir + f))
             {
                 filesNotBackedUp += f + "\n";
+            }
+            
+            // handle the odex as well
+            if (handleOdex && f.endsWith(".apk"))
+            {
+                String odexName = f.replace(".apk", ".odex");
+
+                if (mgr.fileExists(appManagementDir + odexName)
+                    && !mgr.fileExists(backupDir + odexName))
+                {
+                    filesNotBackedUp += odexName + "\n";
+                }
             }
         }
 
@@ -180,6 +203,7 @@ public class AppRemovalScreen extends AppManagementScreen
     private boolean performDelete()
     {
         boolean success = false;
+        boolean handleOdex = AppSettings.getAssociateOdex();
         ArrayList<String> files = getCheckedFiles();
 
         try 
@@ -189,9 +213,20 @@ public class AppRemovalScreen extends AppManagementScreen
             
             for (String f : files)
             {
-                if (!mgr.backupExists(f))
+                if (!mgr.fileExists(f))
                 {
                     mgr.deleteFile(appManagementDir + f, true);
+
+                    // handle the odex as well
+                    if (handleOdex && f.endsWith(".apk"))
+                    {
+                        String odexName = f.replace(".apk", ".odex");
+
+                        if (mgr.fileExists(appManagementDir + odexName))
+                        {
+                            mgr.deleteFile(appManagementDir + odexName, true);
+                        }
+                    }
                 }
             }
             

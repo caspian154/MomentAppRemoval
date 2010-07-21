@@ -9,6 +9,7 @@ import android.os.Bundle;
 public class AppRestoreScreen extends AppManagementScreen
 {
     private String restoreDir;
+    private boolean handleOdex;
 
     /** Called when the activity is first created. */
     @Override
@@ -16,6 +17,7 @@ public class AppRestoreScreen extends AppManagementScreen
     {
         appManagementDir = "/sdcard/sdx/backup/app/";
         restoreDir = "/system/app/";
+        handleOdex = AppSettings.getAssociateOdex();
         super.onCreate(savedInstanceState);
         
         btnCopyFiles.setText("Restore Selected Files");
@@ -43,6 +45,17 @@ public class AppRestoreScreen extends AppManagementScreen
                 {
                     fileName = f;
                     mgr.copyFile(appManagementDir + f, restoreDir, true);
+
+                    // handle the odex as well
+                    if (handleOdex && f.endsWith(".apk"))
+                    {
+                        String odexName = f.replace(".apk", ".odex");
+
+                        if (mgr.fileExists(appManagementDir + odexName))
+                        {
+                            mgr.copyFile(appManagementDir + odexName, restoreDir, true);
+                        }
+                    }
                 }
 
                 success = true;
@@ -98,6 +111,17 @@ public class AppRestoreScreen extends AppManagementScreen
                 {
                     fileName = f;
                     mgr.deleteFile(appManagementDir + f, false);
+
+                    // handle the odex as well
+                    if (handleOdex && f.endsWith(".apk"))
+                    {
+                        String odexName = f.replace(".apk", ".odex");
+
+                        if (mgr.fileExists(appManagementDir + odexName))
+                        {
+                            mgr.deleteFile(appManagementDir + odexName, true);
+                        }
+                    }
                 }
 
                 success = true;

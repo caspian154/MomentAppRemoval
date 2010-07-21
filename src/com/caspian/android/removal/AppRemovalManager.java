@@ -107,7 +107,7 @@ public class AppRemovalManager
      * @param fileName
      * @return true if there's a backup
      */
-    public boolean backupExists(String fileName)
+    public boolean fileExists(String fileName)
     {
         File testFile = new File(fileName);
         return testFile.exists();

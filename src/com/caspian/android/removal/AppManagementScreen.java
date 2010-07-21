@@ -101,23 +101,30 @@ public abstract class AppManagementScreen extends Activity
         });
     }
     
-//    class FileFilter implements FilenameFilter {
-//        private Pattern pattern;
-//
-//        public FileFilter(String search) 
-//        {
-//            search = search.replaceAll("\\.", "\\.");
-//            search = search.replaceAll("?", ".");
-//            search = search.replaceAll("*", ".*");
-//            
-//            pattern = Pattern.compile(search);
-//        }
-//
-//        public boolean accept(File dir, String name) {
-//          // Strip path information, search for regex:
-//          return pattern.matcher(new File(name).getName()).matches();
-//        }
-//      }
+    /**
+     * Filter to only show certain patterns in the management screens.
+     * 
+     * @author stelle
+     */
+    class FileFilter implements FilenameFilter {
+        private Pattern pattern;
+
+        public FileFilter(String search) 
+        {
+            // escape the . character
+            search = search.replaceAll("\\.", "\\\\.");
+            
+            // change * to .*
+            search = search.replaceAll("\\*", ".*");
+            
+            pattern = Pattern.compile(search);
+        }
+
+        public boolean accept(File dir, String name) {
+          // Strip path information, search for regex:
+          return pattern.matcher(new File(name).getName()).matches();
+        }
+      }
     
     /**
      * (re)create the file list that displays all the files
@@ -126,7 +133,7 @@ public abstract class AppManagementScreen extends Activity
     {
         // get a sorted array of files
         File f = new File(appManagementDir);
-        String[] files = f.list();//new FileFilter(AppSettings.getFilter()));
+        String[] files = f.list(new FileFilter(AppSettings.getFilter()));
         
         // get the adapter for this file list
         ArrayAdapter<String> a = (ArrayAdapter<String>)fileList.getAdapter();
@@ -137,7 +144,7 @@ public abstract class AppManagementScreen extends Activity
         
         if (files != null && files.length > 0)
         {
-            Arrays.sort(files, 0, files.length - 1, new Comparator<Object>() {
+            Arrays.sort(files, 0, files.length, new Comparator<Object>() {
 
                 @Override
                 public int compare(Object object1, Object object2)
