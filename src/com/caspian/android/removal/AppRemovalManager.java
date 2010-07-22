@@ -86,9 +86,9 @@ public class AppRemovalManager
         String cmd[] = new String[3];
         cmd[0] = "su";
         cmd[1] = "-c";
-        cmd[2]= "mount -o remount,";
+        cmd[2]= "mount -t rfs -o remount,";
         cmd[2] += (writeable ? "rw" : "ro");
-        cmd[2] += " " + dirName;
+        cmd[2] += " " + deviceName + " " + dirName;
 
         // get the runtime object
         Runtime r = Runtime.getRuntime();
