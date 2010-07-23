@@ -4,18 +4,16 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-
-import android.widget.ListView;
-import android.widget.Toast;
 
 public class AppRemovalManager
 {
+    public static final String SYSTEM_DIR = "/system";
+    
     /**
-     * Get whether /system is mounted rw
+     * Get whether mountPoint is mounted rw
      * @return
      */
-    public static boolean isSystemRw()
+    public static boolean isMountPointRw(String mountPoint)
     {
         boolean isRw = false;
         String cmd[] = new String[3];
@@ -31,11 +29,19 @@ public class AppRemovalManager
             
             if (p.waitFor() == 0)
             {
-                String output = getProcessOutput(p);
-                
-                // A typical mount shouldn't contain rw unless the system
-                // dir is mounted rw - I hope this is a valid assumption
-                isRw = output.contains("rw"); 
+                BufferedReader br = new BufferedReader(
+                    new InputStreamReader(p.getInputStream()));
+                String line;
+                while ((line = br.readLine()) != null)
+                {
+                    if (line.contains(mountPoint))
+                    {
+                        // A typical mount shouldn't contain rw unless the system
+                        // dir is mounted rw - I hope this is a valid assumption
+                        isRw = line.contains("rw");
+                        break;
+                    }
+                }
             }
             else
             {
@@ -53,6 +59,56 @@ public class AppRemovalManager
     }
     
     /**
+     * Find the Device name of a mount point.
+     * 
+     * @param mountPoint
+     * @return
+     */
+    public static String findMountedDevice(String mountPoint)
+    {
+        String deviceName = "";
+        
+
+        String cmd[] = new String[3];
+        cmd[0] = "sh";
+        cmd[1] = "-c";
+        cmd[2]= "mount";
+
+        try
+        {
+            // get the runtime object
+            Runtime r = Runtime.getRuntime();
+            Process p = r.exec(cmd);     
+            
+            if (p.waitFor() == 0)
+            {
+                BufferedReader br = new BufferedReader(
+                    new InputStreamReader(p.getInputStream()));
+                String line;
+                while ((line = br.readLine()) != null)
+                {
+                    if (line.contains(mountPoint))
+                    {
+                        deviceName = line.split(" ")[0];
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                String output = getProcessError(p);
+                System.err.println(output);
+            }
+        }
+        catch (Exception e)
+        {
+            // eat the exception
+            e.printStackTrace();
+        }
+        return deviceName;
+    }
+    
+    /**
      * Remount /system 
      * 
      * @param writeable mount ro (false) or rw (true)
@@ -62,7 +118,7 @@ public class AppRemovalManager
     public static void remountSystemDir(boolean writeable) 
     throws IOException, InterruptedException
     {
-        remountDir("/system", "/dev/stl5", writeable);
+        remountDir(SYSTEM_DIR, writeable);
     }
 
     /**
@@ -79,24 +135,59 @@ public class AppRemovalManager
      * @throws InterruptedException
      */
     public static void remountDir(
-        String dirName, 
-        String deviceName,
+        String mountPoint, 
         boolean writeable) throws IOException, InterruptedException
     {
+        String deviceName = "";
+        //String fsType = "";
+
+        // first execute a command to look up the device name and filesystem type
         String cmd[] = new String[3];
-        cmd[0] = "su";
+        cmd[0] = "sh";
         cmd[1] = "-c";
-        cmd[2]= "mount -t rfs -o remount,";
-        cmd[2] += (writeable ? "rw" : "ro");
-        cmd[2] += " " + deviceName + " " + dirName;
+        cmd[2]= "mount";
 
         // get the runtime object
         Runtime r = Runtime.getRuntime();
         Process p = r.exec(cmd);     
         
+        if (p.waitFor() == 0)
+        {
+            BufferedReader br = new BufferedReader(
+                new InputStreamReader(p.getInputStream()));
+            String line;
+            while ((line = br.readLine()) != null)
+            {
+                if (line.contains(mountPoint))
+                {
+                    deviceName = line.split(" ")[0];
+                    // yaffs2 vfat rfs
+                    
+                    break;
+                }
+            }
+        }
+        else
+        {
+            String output = getProcessError(p);
+            System.err.println(output);
+        }
+        
+        // now perform the mount command
+        cmd = new String[3];
+        cmd[0] = "su";
+        cmd[1] = "-c";
+        cmd[2]= "mount -o remount,";
+        cmd[2] += (writeable ? "rw" : "ro");
+        // cmd[2] += "-t " + fsType; specifying the type seems unnecessary?
+        cmd[2] += " " + deviceName + " " + mountPoint;
+
+        // get the runtime object
+        p = r.exec(cmd);     
+        
         if (p.waitFor() != 0)
         {
-            throw new IOException("Error could not mount " + dirName + ": \n" + 
+            throw new IOException("Error could not mount " + mountPoint + ": \n" + 
                 getProcessError(p));
         }
     }

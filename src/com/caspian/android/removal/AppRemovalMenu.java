@@ -3,7 +3,6 @@ package com.caspian.android.removal;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.CheckBoxPreference;
 import android.preference.EditTextPreference;
@@ -55,7 +54,8 @@ public class AppRemovalMenu extends PreferenceActivity
         {
             CheckBoxPreference systemMount = new CheckBoxPreference(this);
             systemMount.setTitle("Mount /system rw");
-            systemMount.setChecked(AppRemovalManager.isSystemRw());
+            systemMount.setChecked(
+                AppRemovalManager.isMountPointRw(AppRemovalManager.SYSTEM_DIR));
             mainScreen.addPreference(systemMount);
 
             systemMount.setOnPreferenceChangeListener(
