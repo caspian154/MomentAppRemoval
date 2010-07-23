@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
+import android.widget.Toast;
 
 public class AppRestoreScreen extends AppManagementScreen
 {
@@ -89,6 +90,14 @@ public class AppRestoreScreen extends AppManagementScreen
             }
         }
 
+        if (success)
+        {
+            Toast toast = Toast.makeText(
+                    getApplicationContext(), 
+                    "Successfully restored files", 
+                    Toast.LENGTH_SHORT);
+            toast.show();
+        }
         return success;
     }
 

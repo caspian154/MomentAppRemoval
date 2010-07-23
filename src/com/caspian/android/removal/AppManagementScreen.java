@@ -88,14 +88,7 @@ public abstract class AppManagementScreen extends Activity
             @Override
             public void onClick(View v)
             {
-                if (copyCheckedFiles())
-                {
-                    Toast toast = Toast.makeText(
-                            getApplicationContext(), 
-                            "Successfully restored files", 
-                            Toast.LENGTH_SHORT);
-                    toast.show();
-                }
+                copyCheckedFiles();
             }
         });
 
